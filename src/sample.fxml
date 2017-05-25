@@ -16,13 +16,13 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="752.0" prefWidth="1098.0" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1" fx:controller="MainSceneController">
+<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="886.0" prefWidth="1237.0" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1" fx:controller="MainSceneController">
    <top>
       <MenuBar BorderPane.alignment="CENTER">
         <menus>
           <Menu text="文件(_F)">
             <items>
-              <MenuItem text="退出">
+              <MenuItem onAction="#exitClicked" text="退出">
                      <accelerator>
                         <KeyCodeCombination alt="UP" code="Q" control="ANY" meta="UP" shift="UP" shortcut="UP" />
                      </accelerator>
@@ -31,7 +31,7 @@
           </Menu>
           <Menu text="帮助(_H)">
             <items>
-              <MenuItem mnemonicParsing="false" text="关于" />
+              <MenuItem mnemonicParsing="false" onAction="#aboutClicked" text="关于" />
             </items>
           </Menu>
         </menus>
@@ -213,6 +213,18 @@
                   </VBox>
                </children>
             </HBox>
+            <TableView prefHeight="200.0" prefWidth="200.0">
+              <columns>
+                <TableColumn prefWidth="147.0" text="C1" />
+                <TableColumn minWidth="0.0" prefWidth="132.0" text="C2" />
+              </columns>
+            </TableView>
+            <TableView prefHeight="200.0" prefWidth="200.0">
+              <columns>
+                <TableColumn prefWidth="75.0" text="C1" />
+                <TableColumn prefWidth="75.0" text="C2" />
+              </columns>
+            </TableView>
          </children>
       </VBox>
    </center>
