@@ -179,7 +179,7 @@ public class Pipeline {
             count++;
         }
         hasParsed = true;
-        return -1;
+        return 0;
     }
 
     public int run() {

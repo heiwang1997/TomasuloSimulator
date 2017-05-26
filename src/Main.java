@@ -10,7 +10,7 @@ public class Main extends Application {
     public void start(Stage primaryStage) throws Exception{
         Parent root = FXMLLoader.load(getClass().getResource("sample.fxml"));
         primaryStage.setTitle("Tomasulo调度算法模拟器");
-        primaryStage.setScene(new Scene(root, 1280, 768));
+        primaryStage.setScene(new Scene(root, 1280, 900));
         primaryStage.show();
     }
 

@@ -12,6 +12,7 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
 import javafx.util.Pair;
+import tableElements.CodeRow;
 import tableElements.RSRow;
 
 import java.net.URL;
@@ -23,6 +24,7 @@ public class MainSceneController implements Initializable {
     public Label clockLabel;
     public Label clockTimeLabel;
     public TableView<RSRow> rsTableView;
+    public TableView<CodeRow> codeTableView;
 
     @FXML
     private Button inputButton;
@@ -80,10 +82,33 @@ public class MainSceneController implements Initializable {
 
             if (result.isPresent()) {
                 inputCode = result.get();
-                showAlert(Alert.AlertType.ERROR, "错误", "语法错误", String.format("%s", result.get()));
+                if (inputCode(inputCode)) {
+                    refreshCodeSection();
+                    break;
+                }
             } else {
                 return;
             }
+        }
+    }
+
+    private boolean inputCode(String code) {
+        String[] codeLines = code.split("\\r?\\n");
+        for (String line : codeLines) {
+            line = line.trim();
+            if (line.startsWith("#") || line.startsWith("//")) {
+                continue;
+            }
+            if (line.matches(".*\\w.*")) {
+                pipeline.addCmd(line);
+            }
+        }
+        int parseResult = pipeline.parser();
+        if (parseResult == -1) {
+            showAlert(Alert.AlertType.ERROR, "错误", "语法错误", String.format("%s", "Error Msg."));
+            return false;
+        } else {
+            return true;
         }
     }
 
@@ -148,6 +173,16 @@ public class MainSceneController implements Initializable {
                 new RSRow("1"), new RSRow("2")
         );
         rsTableView.getItems().setAll(a);
+    }
+
+    private void refreshCodeSection() {
+        ObservableList<CodeRow> a = FXCollections.observableArrayList();
+        for (Cmd cmd : pipeline.decodedList) {
+            CodeRow cRow = new CodeRow(a.size() + 1, "Code");
+            cRow.setSt1("OK");
+            a.add(cRow);
+        }
+        codeTableView.getItems().setAll(a);
     }
 
     private void showAlert(Alert.AlertType type, String title, String header, String content) {
