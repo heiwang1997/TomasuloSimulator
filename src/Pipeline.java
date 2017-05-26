@@ -1,3 +1,4 @@
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -35,6 +36,8 @@ public class Pipeline {
     int[] runningRS;
     int[] restTime;
 
+    ArrayDeque<Integer> loadQueue;
+    ArrayDeque<Integer> storeQueue;
 
     public Pipeline() {
         cpuRegisters = new int[8];
@@ -61,6 +64,9 @@ public class Pipeline {
             runningRS[i] = -1;
             restTime[i] = -1;
         }
+
+        loadQueue = new ArrayDeque<>();
+        storeQueue = new ArrayDeque<>();
     }
 
     public int parser() {
@@ -203,6 +209,16 @@ public class Pipeline {
                     buffers[i][j] = new TMLBuffer();
 
             memory = new float[4096];
+
+            runningRS = new int[4];
+            restTime = new int[4];
+            for (int i = 0; i < 4; i++) {
+                runningRS[i] = -1;
+                restTime[i] = -1;
+            }
+
+            loadQueue = new ArrayDeque<>();
+            storeQueue = new ArrayDeque<>();
         }
         runTimes++;
         return 0;
@@ -266,6 +282,7 @@ public class Pipeline {
                 for (int i = 0; i < 3; i++)
                     if (!buffers[bufferNum][i].busy) {
                         buffers[bufferNum][i].busy = true;
+                        buffers[bufferNum][i].pc = pc;
                         if (fpRegistersStatus[cmd.code[2]][0] >= 0) {
                             buffers[bufferNum][i].rsIndex[0][0] = fpRegistersStatus[cmd.code[2]][0];
                             buffers[bufferNum][i].rsIndex[0][1] = fpRegistersStatus[cmd.code[2]][1];
@@ -292,17 +309,21 @@ public class Pipeline {
                 for (int i = 0; i < 3; i++)
                     if (!buffers[bufferNum][i].busy) {
                         buffers[bufferNum][i].busy = true;
+                        buffers[bufferNum][i].pc = pc;
                         buffers[bufferNum][i].address = cmd.code[2];
 
-                        if (bufferNum == 3)
+                        if (bufferNum == 3) {
                             if (fpRegistersStatus[cmd.code[1]][0] >= 0) {
                                 buffers[bufferNum][i].rsIndex[0][0] = fpRegistersStatus[cmd.code[1]][0];
                                 buffers[bufferNum][i].rsIndex[0][1] = fpRegistersStatus[cmd.code[1]][1];
                             }
+                            storeQueue.add(i);
+                        }
 
                         if (bufferNum == 2) {
                             fpRegistersStatus[cmd.code[1]][0] = 0;
                             fpRegistersStatus[cmd.code[1]][1] = i;
+                            loadQueue.add(i);
                         }
                         flag = true;
                         break;
@@ -316,7 +337,7 @@ public class Pipeline {
     }
 
     private int whichRSRun() {
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0; i < 2; i++) {
             if (runningRS[i] == -1) {
                 for (int j = 0; j < 3; j++) {
                     if (buffers[i][j].busy)
@@ -333,13 +354,25 @@ public class Pipeline {
                                     else restTime[i] = 40;
                                     break;
                                 }
-                                case 2:
-                                case 3: {
-                                    restTime[i] = 2;
-                                    break;
-                                }
                             }
                         }
+                }
+            }
+        }
+        if (runningRS[2] == -1) {
+            Integer num = loadQueue.remove();
+            if (num != null) {
+                restTime[2] = 2;
+                runningRS[2] = num;
+            }
+        }
+        if (runningRS[3] == -1) {
+            Integer num = storeQueue.getFirst();
+            if (num != null) {
+                if (buffers[3][num].rsIndex[0][0] == -1) {
+                    restTime[3] = 2;
+                    runningRS[3] = num;
+                    storeQueue.remove();
                 }
             }
         }
@@ -383,7 +416,7 @@ public class Pipeline {
                     }
                 }
                 if (i == 3) {
-                    for (int j = 0; j < 31; j++)
+                    for (int j = 0; j < 31; j+=2)
                         if (fpRegistersStatus[j][0] == i && fpRegistersStatus[j][1] == runningRS[i]) {
                             fpRegistersStatus[j][0] = fpRegistersStatus[j][1] = -1;
                             break;
@@ -404,7 +437,7 @@ public class Pipeline {
                                 buffers[j][k].value[1] = result;
                             }
                         }
-                for (int j = 0; j < 31; j++)
+                for (int j = 0; j < 31; j+=2)
                     if (fpRegistersStatus[j][0] == i && fpRegistersStatus[j][1] == runningRS[i]) {
                         fpRegistersStatus[j][0] = fpRegistersStatus[j][1] = -1;
                         break;

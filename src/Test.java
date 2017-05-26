@@ -5,11 +5,12 @@ public class Test {
     public static void main(String[] args) {
         Pipeline test = new Pipeline();
 
-        test.addCmd("LD F1,120(R4)");
-        test.addCmd("LD F1,120(R4)");
-        test.addCmd("LD F1,120(R4)");
-        test.addCmd("LD F1,120(R4)");
-        test.addCmd("LD F1,120(R4)");
+        test.addCmd("LD F2,120(R4)");
+        test.addCmd("LD F2,120(R4)");
+        test.addCmd("LD F2,120(R4)");
+        test.addCmd("LD F2,120(R4)");
+        test.addCmd("LD F2,120(R4)");
+        test.parser();
         test.run();
         System.out.print(test.nextStep(10));
     }
