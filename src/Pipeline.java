@@ -7,16 +7,26 @@ import java.util.regex.Pattern;
  */
 
 public class Pipeline {
+
+    public static final int ADD = 0;
+    public static final int SUB = ADD + 1;
+    public static final int MUL = SUB + 1;
+    public static final int DIV = MUL + 1;
+    public static final int LOAD = DIV + 1;
+    public static final int STORE = LOAD + 1;
+
     int[] cpuRegisters;
-    int[] fpRegisters;
+    float[] fpRegisters;
 
     int[][] fpRegistersStatus;
 
     ArrayList<String> cmdList;
+    ArrayList<Cmd> decodedList;
 
     TMLBuffer[][] buffers;
     int pc;
 
+    boolean hasParsed;
     boolean isRunning;
     int runTimes;
 
@@ -25,19 +35,21 @@ public class Pipeline {
     int[] runningRS;
     int[] restTime;
 
+
     public Pipeline() {
         cpuRegisters = new int[8];
-        fpRegisters = new int[31];
-        fpRegistersStatus = new int[31][2];
+        fpRegisters = new float[32];
+        fpRegistersStatus = new int[32][2];
 
         cmdList = new ArrayList<>();
         pc = 0;
 
-        buffers = new TMLBuffer[4][3];
+        buffers = new TMLBuffer[4][3]; // add mult load store
         for (int i = 0; i < 4; i++)
             for (int j = 0; j < 3; j++)
                 buffers[i][j] = new TMLBuffer();
 
+        hasParsed = false;
         isRunning = false;
         runTimes = 0;
 
@@ -51,8 +63,122 @@ public class Pipeline {
         }
     }
 
+    public int parser() {
+        decodedList = new ArrayList<>();
+        int count = 1;
+        for (String cmd : cmdList) {
+            String[] opList = cmd.split(" |,");
+
+            opList[0] = opList[0].toUpperCase();
+
+            Pattern p = Pattern.compile("^F([0-9]+)$");
+            int operator;
+            int addr;
+            Cmd tempCmd = new Cmd();
+            switch (opList[0]) {
+                case "ADDD": {
+                    operator = ADD;
+                }
+                case "SUBD": {
+                    operator = SUB;
+                    break;
+                }
+                case "MULD": {
+                    operator = MUL;
+                    break;
+                }
+                case "DIVD": {
+                    operator = DIV;
+                    break;
+                }
+                case "LD": {
+                    operator = LOAD;
+                    break;
+                }
+                case "ST": {
+                    operator = STORE;
+                    break;
+                }
+                default:
+                    System.out.println(String.format("第%d条代码格式有误,操作数不存在", count));
+                    return -1;
+            }
+            tempCmd.code[0] = operator;
+            if (operator <= DIV) {
+                if (opList.length != 4)
+                    return -1;
+                for (int i = 1; i < 4; i++) {
+                    Matcher m = p.matcher(opList[i]);
+                    if (m.find()) {
+                        tempCmd.code[i] = Integer.parseInt(m.group(1));
+                        if (tempCmd.code[i] >= 30) {
+                            System.out.println(String.format("第%d条代码格式有误,寄存器编号越界", count));
+                            return -1;
+                        }
+                        if (tempCmd.code[i] % 2 != 0) {
+                            System.out.println(String.format("第%d条代码格式有误,寄存器编号非偶数", count));
+                            return -1;
+                        }
+                    } else return -1;
+                }
+            }
+            else {
+                if (opList.length != 3)
+                    return -1;
+                Matcher m = p.matcher(opList[1]);
+                if (m.find()) {
+                    tempCmd.code[1] = Integer.parseInt(m.group(1));
+                    if (tempCmd.code[1] >= 30) {
+                        System.out.println(String.format("第%d条代码格式有误,寄存器编号越界", count));
+                        return -1;
+                    }
+                    if (tempCmd.code[1] % 2 != 0) {
+                        System.out.println(String.format("第%d条代码格式有误,寄存器编号非偶数", count));
+                        return -1;
+                    }
+                } else return -1;
+
+                Pattern addrP = Pattern.compile("^([0-9]+)\\(R([0-9]+)\\)$");
+                Matcher addrM = addrP.matcher(opList[2]);
+                if (addrM.find()) {
+                    int cpuRNum = Integer.parseInt(addrM.group(2));
+                    if (cpuRNum > 8) {
+                        System.out.println(String.format("第%d条代码格式有误,CPU寄存器编号越界", pc + 1));
+                        return -1;
+                    }
+                    tempCmd.code[2] = Integer.parseInt(addrM.group(1)) + cpuRegisters[cpuRNum];
+                } else {
+                    addrP = Pattern.compile("^([0-9]+)$");
+                    addrM = addrP.matcher(opList[2]);
+                    if (addrM.find()) {
+                        tempCmd.code[2] = Integer.parseInt(addrM.group(1));
+                    } else {
+                        System.out.println(String.format("第%d条代码语法有误", pc + 1));
+                        return -1;
+                    }
+                }
+
+                if (tempCmd.code[2] < 0 || tempCmd.code[2] >= 4096) {
+                    System.out.println(String.format("第%d条代码格式有误,内存地址编号越界", pc + 1));
+                    return -1;
+                }
+
+                if (tempCmd.code[2] % 4 != 0) {
+                    System.out.println(String.format("第%d条代码执行出错,内存地址未对齐", pc + 1));
+                    return -1;
+                }
+            }
+            decodedList.add(tempCmd);
+            count++;
+        }
+        hasParsed = true;
+        return -1;
+    }
+
     public int run() {
         if (isRunning)
+            return -1;
+        if (!hasParsed)
             return -1;
         if (cmdList.size() == 0)
             return -1;
@@ -61,8 +187,8 @@ public class Pipeline {
 
         if (runTimes > 0) {
             cpuRegisters = new int[8];
-            fpRegisters = new int[31];
-            fpRegistersStatus = new int[31][2];
+            fpRegisters = new float[32];
+            fpRegistersStatus = new int[32][2];
             for (int i = 0; i < 32; i++) {
                 fpRegistersStatus[i][0] = -1;
                 fpRegisters[i] = 0;
@@ -111,137 +237,72 @@ public class Pipeline {
     private int issue() {
         if (pc < cmdList.size()) {
             System.out.println(pc);
-            String cmd = cmdList.get(pc++);
-            String[] opList = cmd.split(" |,");
-
-            opList[0] = opList[0].toUpperCase();
-
-            Pattern p = Pattern.compile("^F([0-9]+)$");
+            Cmd cmd = decodedList.get(pc++);
             int bufferNum;
-            int addr;
-            int[] registerNum = new int[3];
-            switch (opList[0]) {
-                case "ADDD":
-                case "SUBD": {
-                    System.out.println("加减法指令");
+            switch (cmd.code[0]) {
+                case ADD:
+                case SUB: {
                     bufferNum = 0;
                     break;
                 }
-                case "MULD":
-                case "DIVD": {
-                    System.out.println("乘除法指令");
+                case MUL:
+                case DIV: {
                     bufferNum = 1;
                     break;
                 }
-                case "LD": {
-                    System.out.println("读取指令");
+                case LOAD: {
                     bufferNum = 2;
                     break;
                 }
-                case "ST": {
-                    System.out.println("写入指令");
+                case STORE: {
                     bufferNum = 3;
                     break;
                 }
                 default:
-                    System.out.println(String.format("第%d条代码格式有误,操作数不存在", pc + 1));
                     return -1;
             }
             if (bufferNum <= 1) {
-                if (opList.length != 4)
-                    return -1;
-                for (int i = 0; i < 3; i++) {
-                    Matcher m = p.matcher(opList[i + 1]);
-                    if (m.find()) {
-                        registerNum[i] = Integer.parseInt(m.group(1));
-                        if (registerNum[i] >= 31) {
-                            System.out.println(String.format("第%d条代码格式有误,寄存器编号越界", pc + 1));
-                            return -1;
-                        }
-                    } else return -1;
-                }
                 boolean flag = false;
                 for (int i = 0; i < 3; i++)
                     if (!buffers[bufferNum][i].busy) {
                         buffers[bufferNum][i].busy = true;
-                        if (fpRegistersStatus[registerNum[1]][0] >= 0) {
-                            buffers[bufferNum][i].rsIndex[0][0] = fpRegistersStatus[registerNum[1]][0];
-                            buffers[bufferNum][i].rsIndex[0][1] = fpRegistersStatus[registerNum[1]][1];
-                        } else buffers[bufferNum][i].value[0] = fpRegisters[registerNum[1]];
-                        if (fpRegistersStatus[registerNum[2]][0] >= 0) {
-                            buffers[bufferNum][i].rsIndex[1][0] = fpRegistersStatus[registerNum[2]][0];
-                            buffers[bufferNum][i].rsIndex[1][1] = fpRegistersStatus[registerNum[2]][1];
-                        } else buffers[bufferNum][i].value[1] = fpRegisters[registerNum[2]];
+                        if (fpRegistersStatus[cmd.code[2]][0] >= 0) {
+                            buffers[bufferNum][i].rsIndex[0][0] = fpRegistersStatus[cmd.code[2]][0];
+                            buffers[bufferNum][i].rsIndex[0][1] = fpRegistersStatus[cmd.code[2]][1];
+                        } else buffers[bufferNum][i].value[0] = fpRegisters[cmd.code[2]];
+                        if (fpRegistersStatus[cmd.code[3]][0] >= 0) {
+                            buffers[bufferNum][i].rsIndex[1][0] = fpRegistersStatus[cmd.code[3]][0];
+                            buffers[bufferNum][i].rsIndex[1][1] = fpRegistersStatus[cmd.code[3]][1];
+                        } else buffers[bufferNum][i].value[1] = fpRegisters[cmd.code[3]];
 
-                        fpRegistersStatus[registerNum[0]][0] = 0;
-                        fpRegistersStatus[registerNum[0]][1] = i;
+                        fpRegistersStatus[cmd.code[1]][0] = 0;
+                        fpRegistersStatus[cmd.code[1]][1] = i;
 
                         if (bufferNum == 0)
-                            buffers[0][i].operator = opList[0].equals("ADDD") ? 0 : 1;
+                            buffers[0][i].operator = cmd.code[0] == ADD ? 0 : 1;
                         else
-                            buffers[1][i].operator = opList[0].equals("MULD") ? 0 : 1;
+                            buffers[1][i].operator = cmd.code[0] == MUL ? 0 : 1;
                         flag = true;
                         break;
                     }
                 if (!flag)
                     pc--;
             } else {
-                if (opList.length != 3)
-                    return -1;
-                Matcher m = p.matcher(opList[1]);
-                if (m.find()) {
-                    registerNum[0] = Integer.parseInt(m.group(1));
-                    if (registerNum[0] >= 31) {
-                        System.out.println(String.format("第%d条代码格式有误,寄存器编号越界", pc + 1));
-                        return -1;
-                    }
-                } else return -1;
-
-                Pattern addrP = Pattern.compile("^([0-9]+)\\(R([0-9]+)\\)$");
-                Matcher addrM = addrP.matcher(opList[2]);
-                if (addrM.find()) {
-                    int cpuRNum = Integer.parseInt(addrM.group(2));
-                    if (cpuRNum > 8) {
-                        System.out.println(String.format("第%d条代码格式有误,CPU寄存器编号越界", pc + 1));
-                        return -1;
-                    }
-                    addr = Integer.parseInt(addrM.group(1)) + cpuRegisters[cpuRNum];
-                } else {
-                    addrP = Pattern.compile("^([0-9]+)$");
-                    addrM = addrP.matcher(opList[2]);
-                    if (addrM.find()) {
-                        addr = Integer.parseInt(addrM.group(1));
-                    } else {
-                        System.out.println(String.format("第%d条代码语法有误", pc + 1));
-                        return -1;
-                    }
-                }
-
-                if (addr < 0 || addr >= 4096) {
-                    System.out.println(String.format("第%d条代码格式有误,内存地址编号越界", pc + 1));
-                    return -1;
-                }
-
-                if (addr % 4 != 0) {
-                    System.out.println(String.format("第%d条代码执行出错,内存地址未对齐", pc + 1));
-                    return -1;
-                }
-
                 boolean flag = false;
                 for (int i = 0; i < 3; i++)
                     if (!buffers[bufferNum][i].busy) {
                         buffers[bufferNum][i].busy = true;
-                        buffers[bufferNum][i].address = addr;
+                        buffers[bufferNum][i].address = cmd.code[2];
 
                         if (bufferNum == 3)
-                            if (fpRegistersStatus[registerNum[0]][0] >= 0) {
-                                buffers[bufferNum][i].rsIndex[0][0] = fpRegistersStatus[registerNum[0]][0];
-                                buffers[bufferNum][i].rsIndex[0][1] = fpRegistersStatus[registerNum[0]][1];
+                            if (fpRegistersStatus[cmd.code[1]][0] >= 0) {
+                                buffers[bufferNum][i].rsIndex[0][0] = fpRegistersStatus[cmd.code[1]][0];
+                                buffers[bufferNum][i].rsIndex[0][1] = fpRegistersStatus[cmd.code[1]][1];
                             }
 
                         if (bufferNum == 2) {
-                            fpRegistersStatus[registerNum[0]][0] = 0;
-                            fpRegistersStatus[registerNum[0]][1] = i;
+                            fpRegistersStatus[cmd.code[1]][0] = 0;
+                            fpRegistersStatus[cmd.code[1]][1] = i;
                         }
                         flag = true;
                         break;
@@ -359,12 +420,9 @@ public class Pipeline {
     public int addCmd(String cmd) {
         if (isRunning)
             return -1;
+        hasParsed = false;
         cmdList.add(cmd);
         return 0;
 //        System.out.print(cmdList);
-    }
-
-    public enum BufferName {
-        LOAD, STORE, ADD, MULT;
     }
 }
