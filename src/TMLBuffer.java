@@ -8,6 +8,7 @@ public class TMLBuffer {
     int[][] rsIndex;
     int address;
     int pc;
+    int registerNum;
 
     public TMLBuffer() {
         busy = false;
@@ -16,6 +17,7 @@ public class TMLBuffer {
         rsIndex[0][0] = -1;
         rsIndex[1][0] = -1;
 
+        registerNum = -1;
         address = -1;
         pc = -1;
     }

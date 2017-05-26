@@ -36,13 +36,16 @@ public class Pipeline {
     int[] runningRS;
     int[] restTime;
 
-    ArrayDeque<Integer> loadQueue;
-    ArrayDeque<Integer> storeQueue;
+    ArrayDeque<Integer> loadStoreQueue;
 
     public Pipeline() {
         cpuRegisters = new int[8];
         fpRegisters = new float[32];
         fpRegistersStatus = new int[32][2];
+        for (int i = 0; i < 32; i++) {
+            fpRegistersStatus[i][0] = -1;
+            fpRegisters[i] = 0;
+        }
 
         cmdList = new ArrayList<>();
         pc = 0;
@@ -65,8 +68,7 @@ public class Pipeline {
             restTime[i] = -1;
         }
 
-        loadQueue = new ArrayDeque<>();
-        storeQueue = new ArrayDeque<>();
+        loadStoreQueue = new ArrayDeque<>();
     }
 
     public int parser() {
@@ -79,7 +81,6 @@ public class Pipeline {
 
             Pattern p = Pattern.compile("^F([0-9]+)$");
             int operator;
-            int addr;
             Cmd tempCmd = new Cmd();
             switch (opList[0]) {
                 case "ADDD": {
@@ -217,8 +218,7 @@ public class Pipeline {
                 restTime[i] = -1;
             }
 
-            loadQueue = new ArrayDeque<>();
-            storeQueue = new ArrayDeque<>();
+            loadStoreQueue = new ArrayDeque<>();
         }
         runTimes++;
         return 0;
@@ -283,6 +283,7 @@ public class Pipeline {
                     if (!buffers[bufferNum][i].busy) {
                         buffers[bufferNum][i].busy = true;
                         buffers[bufferNum][i].pc = pc;
+                        buffers[bufferNum][i].registerNum = cmd.code[1];
                         if (fpRegistersStatus[cmd.code[2]][0] >= 0) {
                             buffers[bufferNum][i].rsIndex[0][0] = fpRegistersStatus[cmd.code[2]][0];
                             buffers[bufferNum][i].rsIndex[0][1] = fpRegistersStatus[cmd.code[2]][1];
@@ -292,7 +293,7 @@ public class Pipeline {
                             buffers[bufferNum][i].rsIndex[1][1] = fpRegistersStatus[cmd.code[3]][1];
                         } else buffers[bufferNum][i].value[1] = fpRegisters[cmd.code[3]];
 
-                        fpRegistersStatus[cmd.code[1]][0] = 0;
+                        fpRegistersStatus[cmd.code[1]][0] = bufferNum;
                         fpRegistersStatus[cmd.code[1]][1] = i;
 
                         if (bufferNum == 0)
@@ -311,19 +312,21 @@ public class Pipeline {
                         buffers[bufferNum][i].busy = true;
                         buffers[bufferNum][i].pc = pc;
                         buffers[bufferNum][i].address = cmd.code[2];
+                        buffers[bufferNum][i].registerNum = cmd.code[1];
 
                         if (bufferNum == 3) {
                             if (fpRegistersStatus[cmd.code[1]][0] >= 0) {
                                 buffers[bufferNum][i].rsIndex[0][0] = fpRegistersStatus[cmd.code[1]][0];
                                 buffers[bufferNum][i].rsIndex[0][1] = fpRegistersStatus[cmd.code[1]][1];
                             }
-                            storeQueue.add(i);
+                            else buffers[bufferNum][i].value[0] = fpRegisters[cmd.code[1]];
+                            loadStoreQueue.add(i+3);
                         }
 
                         if (bufferNum == 2) {
-                            fpRegistersStatus[cmd.code[1]][0] = 0;
+                            fpRegistersStatus[cmd.code[1]][0] = 2;
                             fpRegistersStatus[cmd.code[1]][1] = i;
-                            loadQueue.add(i);
+                            loadStoreQueue.add(i);
                         }
                         flag = true;
                         break;
@@ -359,20 +362,15 @@ public class Pipeline {
                 }
             }
         }
-        if (runningRS[2] == -1) {
-            Integer num = loadQueue.remove();
+        if (runningRS[2] == -1 && runningRS[3] == -1) {
+            Integer num = loadStoreQueue.getFirst();
             if (num != null) {
-                restTime[2] = 2;
-                runningRS[2] = num;
-            }
-        }
-        if (runningRS[3] == -1) {
-            Integer num = storeQueue.getFirst();
-            if (num != null) {
-                if (buffers[3][num].rsIndex[0][0] == -1) {
-                    restTime[3] = 2;
-                    runningRS[3] = num;
-                    storeQueue.remove();
+                int bufferNum = num>2? 2:3;
+                int rsIndex = num>2?num:num-3;
+                if (buffers[bufferNum][rsIndex].rsIndex[0][0] == -1) {
+                    runningRS[bufferNum] = rsIndex;
+                    restTime[bufferNum] = 2;
+                    loadStoreQueue.remove();
                 }
             }
         }
