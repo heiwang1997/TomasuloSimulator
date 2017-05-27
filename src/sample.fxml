@@ -73,10 +73,6 @@
                </padding>
             </Button>
             <MenuButton fx:id="sampleButton" contentDisplay="TOP" graphicTextGap="10.0" mnemonicParsing="false" popupSide="RIGHT" text="示例" textOverrun="CLIP">
-              <items>
-                <MenuItem mnemonicParsing="false" text="指令1" />
-                <MenuItem mnemonicParsing="false" text="指令2" />
-              </items>
                <VBox.margin>
                   <Insets bottom="15.0" left="15.0" right="15.0" top="15.0" />
                </VBox.margin>

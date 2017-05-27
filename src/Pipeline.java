@@ -38,6 +38,8 @@ public class Pipeline {
 
     ArrayDeque<Integer> loadStoreQueue;
 
+    String parseErrMessage;
+
     public Pipeline() {
         cpuRegisters = new int[8];
         fpRegisters = new float[32];
@@ -82,6 +84,7 @@ public class Pipeline {
             Pattern p = Pattern.compile("^F([0-9]+)$");
             int operator;
             Cmd tempCmd = new Cmd();
+            tempCmd.text = cmd;
             switch (opList[0]) {
                 case "ADDD": {
                     operator = ADD;
@@ -107,7 +110,7 @@ public class Pipeline {
                     break;
                 }
                 default:
-                    System.out.println(String.format("第%d条代码格式有误,操作数不存在", count));
+                    parseErrMessage = String.format("第%d条代码格式有误,操作数不存在", count);
                     return -1;
             }
             tempCmd.code[0] = operator;
@@ -119,11 +122,11 @@ public class Pipeline {
                     if (m.find()) {
                         tempCmd.code[i] = Integer.parseInt(m.group(1));
                         if (tempCmd.code[i] >= 30) {
-                            System.out.println(String.format("第%d条代码格式有误,寄存器编号越界", count));
+                            parseErrMessage = String.format("第%d条代码格式有误,寄存器编号越界", count);
                             return -1;
                         }
                         if (tempCmd.code[i] % 2 != 0) {
-                            System.out.println(String.format("第%d条代码格式有误,寄存器编号非偶数", count));
+                            parseErrMessage = String.format("第%d条代码格式有误,寄存器编号非偶数", count);
                             return -1;
                         }
                     } else return -1;
@@ -136,11 +139,11 @@ public class Pipeline {
                 if (m.find()) {
                     tempCmd.code[1] = Integer.parseInt(m.group(1));
                     if (tempCmd.code[1] >= 30) {
-                        System.out.println(String.format("第%d条代码格式有误,寄存器编号越界", count));
+                        parseErrMessage = String.format("第%d条代码格式有误,寄存器编号越界", count);
                         return -1;
                     }
                     if (tempCmd.code[1] % 2 != 0) {
-                        System.out.println(String.format("第%d条代码格式有误,寄存器编号非偶数", count));
+                        parseErrMessage = String.format("第%d条代码格式有误,寄存器编号非偶数", count);
                         return -1;
                     }
                 } else return -1;
@@ -150,7 +153,7 @@ public class Pipeline {
                 if (addrM.find()) {
                     int cpuRNum = Integer.parseInt(addrM.group(2));
                     if (cpuRNum > 8) {
-                        System.out.println(String.format("第%d条代码格式有误,CPU寄存器编号越界", pc + 1));
+                        parseErrMessage = String.format("第%d条代码格式有误,CPU寄存器编号越界", pc + 1);
                         return -1;
                     }
                     tempCmd.code[2] = Integer.parseInt(addrM.group(1)) + cpuRegisters[cpuRNum];
@@ -160,18 +163,18 @@ public class Pipeline {
                     if (addrM.find()) {
                         tempCmd.code[2] = Integer.parseInt(addrM.group(1));
                     } else {
-                        System.out.println(String.format("第%d条代码语法有误", pc + 1));
+                        parseErrMessage = String.format("第%d条代码语法有误", pc + 1);
                         return -1;
                     }
                 }
 
                 if (tempCmd.code[2] < 0 || tempCmd.code[2] >= 4096) {
-                    System.out.println(String.format("第%d条代码格式有误,内存地址编号越界", pc + 1));
+                    parseErrMessage = String.format("第%d条代码格式有误,内存地址编号越界", pc + 1);
                     return -1;
                 }
 
                 if (tempCmd.code[2] % 4 != 0) {
-                    System.out.println(String.format("第%d条代码执行出错,内存地址未对齐", pc + 1));
+                    parseErrMessage = String.format("第%d条代码执行出错,内存地址未对齐", pc + 1);
                     return -1;
                 }
             }
@@ -202,7 +205,6 @@ public class Pipeline {
                 fpRegisters[i] = 0;
             }
 
-            cmdList = new ArrayList<>();
             pc = 0;
 
             buffers = new TMLBuffer[4][3];
@@ -302,6 +304,7 @@ public class Pipeline {
                         else
                             buffers[1][i].operator = cmd.code[0] == MUL ? 0 : 1;
                         flag = true;
+                        cmd.state = 1;
                         break;
                     }
                 if (!flag)
@@ -330,6 +333,7 @@ public class Pipeline {
                             loadStoreQueue.add(i);
                         }
                         flag = true;
+                        cmd.state = 1;
                         break;
                     }
                 if (!flag)
@@ -386,6 +390,8 @@ public class Pipeline {
         for (int i = 0; i < 4; i++) {
             if (runningRS[i] != -1 && restTime[i] >= 0)
                 restTime[i]--;
+            if (restTime[i] == 0)
+                decodedList.get(buffers[i][runningRS[i]].pc-1).state = 2;
         }
         return 0;
     }
@@ -424,6 +430,7 @@ public class Pipeline {
                             fpRegistersStatus[j][0] = fpRegistersStatus[j][1] = -1;
                             break;
                         }
+                    decodedList.get(buffers[i][runningRS[i]].pc-1).state = 3;
                     buffers[i][runningRS[i]] = new TMLBuffer();
                     runningRS[i] = -1;
                     break;
@@ -445,6 +452,7 @@ public class Pipeline {
                         fpRegistersStatus[j][0] = fpRegistersStatus[j][1] = -1;
                         break;
                     }
+                decodedList.get(buffers[i][runningRS[i]].pc-1).state = 3;
                 buffers[i][runningRS[i]] = new TMLBuffer();
                 runningRS[i] = -1;
                 break;

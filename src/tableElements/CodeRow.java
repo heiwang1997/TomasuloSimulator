@@ -3,7 +3,7 @@ package tableElements;
 import javafx.beans.property.SimpleStringProperty;
 
 /**
- * Created by JamesHuang on 2017/5/26.
+ * Created by Jiahui Huang on 2017/5/26.
  */
 public class CodeRow {
     private SimpleStringProperty id;

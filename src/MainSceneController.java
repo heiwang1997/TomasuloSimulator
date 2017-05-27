@@ -3,6 +3,7 @@ import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.geometry.Insets;
@@ -15,11 +16,18 @@ import javafx.util.Pair;
 import tableElements.CodeRow;
 import tableElements.RSRow;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Optional;
 import java.util.ResourceBundle;
 
 public class MainSceneController implements Initializable {
+
+    private final int SAMPLE_COUNT = 2;
 
     public Label clockLabel;
     public Label clockTimeLabel;
@@ -94,18 +102,26 @@ public class MainSceneController implements Initializable {
 
     private boolean inputCode(String code) {
         String[] codeLines = code.split("\\r?\\n");
+        // Cache current pipeline code
+        ArrayList<String> cachedList = new ArrayList<>(pipeline.cmdList.size());
+        cachedList.addAll(pipeline.cmdList);
+        pipeline.cmdList.clear();
         for (String line : codeLines) {
             line = line.trim();
             if (line.startsWith("#") || line.startsWith("//")) {
                 continue;
             }
             if (line.matches(".*\\w.*")) {
+                System.out.println(line);
                 pipeline.addCmd(line);
             }
         }
         int parseResult = pipeline.parser();
         if (parseResult == -1) {
-            showAlert(Alert.AlertType.ERROR, "错误", "语法错误", String.format("%s", "Error Msg."));
+            showAlert(Alert.AlertType.ERROR, "错误", "语法错误", pipeline.parseErrMessage);
+            pipeline.cmdList.clear();
+            pipeline.cmdList.addAll(cachedList);
+            pipeline.parser();
             return false;
         } else {
             return true;
@@ -143,6 +159,33 @@ public class MainSceneController implements Initializable {
         pipeline = new Pipeline();
 
         refreshReservationStation();
+
+        for (int i = 0; i < SAMPLE_COUNT; ++ i) {
+            MenuItem sampleItem = new MenuItem("示例" + String.valueOf(i + 1));
+            int finalI = i;
+            sampleItem.setOnAction(new EventHandler<ActionEvent>() {
+                @Override
+                public void handle(ActionEvent event) {
+                    InputStream in = getClass().getResourceAsStream(String.format("/samples/s%d.txt", finalI + 1));
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(in));
+                    try {
+                        String line = reader.readLine();
+                        StringBuilder sb = new StringBuilder();
+                        while (line != null) {
+                            sb.append(line).append("\n");
+                            line = reader.readLine();
+                        }
+                        if (inputCode(sb.toString())) {
+                            // TODO: Deduplicate this code.
+                            refreshCodeSection();
+                        }
+                    } catch (IOException e) {
+                        showAlert(Alert.AlertType.ERROR, "错误", "内部错误", "示例不可用，请直接输入代码");
+                    }
+                }
+            });
+            sampleButton.getItems().add(sampleItem);
+        }
     }
 
     private void setClockTime(int time) {
@@ -177,12 +220,19 @@ public class MainSceneController implements Initializable {
 
     private void refreshCodeSection() {
         ObservableList<CodeRow> a = FXCollections.observableArrayList();
+        int pc = 1;
         for (Cmd cmd : pipeline.decodedList) {
-            CodeRow cRow = new CodeRow(a.size() + 1, "Code");
-            cRow.setSt1("OK");
+            CodeRow cRow = new CodeRow(a.size() + 1, cmd.text);
+            if (cmd.state >= 1) cRow.setSt1("OK");
+            if (cmd.state >= 2) cRow.setSt2("OK");
+            if (cmd.state >= 3) cRow.setSt3("OK");
             a.add(cRow);
         }
         codeTableView.getItems().setAll(a);
+    }
+
+    private void refreshRegisters() {
+
     }
 
     private void showAlert(Alert.AlertType type, String title, String header, String content) {
