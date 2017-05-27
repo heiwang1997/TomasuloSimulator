@@ -13,10 +13,7 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
 import javafx.util.Pair;
-import tableElements.CPURegRow;
-import tableElements.CodeRow;
-import tableElements.FPRegRow;
-import tableElements.RSRow;
+import tableElements.*;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -39,6 +36,10 @@ public class MainSceneController implements Initializable {
     public TableView<CodeRow> codeTableView;
     public TableView<FPRegRow> fpRegTableView;
     public TableView<CPURegRow> cpuRegTableView;
+    public TableView<MemRow> memTableView;
+    public Menu changeMenu;
+
+    private int currentTime;
 
     @FXML
     private Button inputButton;
@@ -136,12 +137,28 @@ public class MainSceneController implements Initializable {
 
     @FXML
     void startClicked(ActionEvent event) {
-        switchStatus(true);
+        if (pipeline.isRunning) {
+            // TODO: Fix this.
+            pipeline.isRunning = false;
+            currentTime = 0;
+            switchStatus(false);
+        } else {
+            if (pipeline.decodedList.size() == 0) {
+                showAlert(Alert.AlertType.ERROR, "错误", "操作错误",
+                        "当前指令队列中没有指令，您可以考虑输入指令或使用示例指令。");
+                return;
+            }
+            currentTime = 0;
+            pipeline.run();
+            switchStatus(true);
+        }
     }
 
     @FXML
     void stepClicked(ActionEvent event) {
-
+        pipeline.nextStep();
+        currentTime += 1;
+        refreshAll();
     }
 
     @FXML
@@ -159,13 +176,14 @@ public class MainSceneController implements Initializable {
         tailButton.setGraphic(new ImageView("/resources/tail.png"));
 
         clockLabel.setGraphic(new ImageView("/resources/time.png"));
+        memTableView.setPlaceholder(new Label("内存中所有值均为0"));
+        codeTableView.setPlaceholder(new Label("当前没有任何指令，点击左侧的输入指令或示例指令进行添加"));
 
         switchStatus(false);
 
         pipeline = new Pipeline();
 
-        refreshReservationStation();
-        refreshRegisters();
+        refreshAll();
 
         for (int i = 0; i < SAMPLE_COUNT; ++ i) {
             MenuItem sampleItem = new MenuItem("示例" + String.valueOf(i + 1));
@@ -207,6 +225,7 @@ public class MainSceneController implements Initializable {
             stepButton.setDisable(false);
             continueButton.setDisable(false);
             tailButton.setDisable(false);
+            changeMenu.setDisable(true);
         } else {
             inputButton.setDisable(false);
             sampleButton.setDisable(false);
@@ -215,7 +234,17 @@ public class MainSceneController implements Initializable {
             stepButton.setDisable(true);
             continueButton.setDisable(true);
             tailButton.setDisable(true);
+            fpRegTableView.setEditable(true);
+            changeMenu.setDisable(false);
         }
+    }
+
+    private void refreshAll() {
+        refreshReservationStation();
+        refreshCodeSection();
+        refreshRegisters();
+        refreshMemory();
+        setClockTime(currentTime);
     }
 
     private void refreshReservationStation() {
@@ -224,9 +253,14 @@ public class MainSceneController implements Initializable {
             for (int j = 0; j < 3; ++ j) {
                 String rsName = RS_NAME[i] + String.valueOf(j + 1);
                 RSRow rRow = new RSRow(rsName);
-                rRow.setBusy(pipeline.buffers[i][j].busy ? "Yes" : "No");
-                int op = pipeline.buffers[i][j].operator;
-                rRow.setOp(OP_NAME[i * 2 + op]);
+                TMLBuffer thisBuffer = pipeline.buffers[i][j];
+                if (thisBuffer.busy) {
+                    rRow.setBusy("Yes");
+                    int op = thisBuffer.operator;
+                    rRow.setOp(OP_NAME[i * 2 + op]);
+                } else {
+                    rRow.setBusy("No");
+                }
                 a.add(rRow);
             }
         }
@@ -257,12 +291,32 @@ public class MainSceneController implements Initializable {
         for (int i = 0; i < 30; ++ i) {
             FPRegRow fRow = new FPRegRow("F" + String.valueOf(i + 1));
             fRow.setValue(String.valueOf(pipeline.fpRegisters[i]));
-            String rsName = RS_NAME[pipeline.fpRegistersStatus[i][0]] +
-                    String.valueOf(pipeline.fpRegistersStatus[i][1] + 1);
+            String rsName;
+            if (pipeline.fpRegistersStatus[i][0] == -1) {
+                // if Qi is empty
+                rsName = "";
+            } else {
+                // if this register is going to be filled by an RS, show it.
+                rsName = RS_NAME[pipeline.fpRegistersStatus[i][0]] +
+                        String.valueOf(pipeline.fpRegistersStatus[i][1] + 1);
+            }
             fRow.setRs(rsName);
             b.add(fRow);
         }
         fpRegTableView.getItems().setAll(b);
+    }
+
+    private void refreshMemory() {
+        ObservableList<MemRow> a = FXCollections.observableArrayList();
+        for (int i = 0; i < 4096; ++ i) {
+            if (pipeline.memory[i] != 0.0) {
+                MemRow memRow = new MemRow();
+                memRow.setOffset(String.valueOf(i));
+                memRow.setValue(String.valueOf(pipeline.memory[i]));
+                a.add(memRow);
+            }
+        }
+        memTableView.getItems().addAll(a);
     }
 
     private void showAlert(Alert.AlertType type, String title, String header, String content) {
@@ -280,5 +334,40 @@ public class MainSceneController implements Initializable {
     public void aboutClicked(ActionEvent actionEvent) {
         showAlert(Alert.AlertType.INFORMATION, "信息", "关于本项目",
                 "本项目是计算机系统结构课程的第二次大作业，内容是Tomasulo算法模拟器。");
+    }
+
+    public void registerChangeClicked(ActionEvent actionEvent) {
+        Dialog<String> dialog = new Dialog<>();
+        dialog.setTitle("更改寄存器");
+        dialog.setHeaderText("输入寄存器名以更改寄存器，以R开头的为CPU通用寄存器，以F开头的为浮点寄存器");
+
+        // Set the button types.
+        ButtonType loginButtonType = new ButtonType("确定", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(loginButtonType, ButtonType.CANCEL);
+
+        TextArea tArea = new TextArea();
+        tArea.setPromptText("请在这里输入代码");
+        BorderPane borderPane = new BorderPane(tArea);
+        BorderPane.setMargin(borderPane, new Insets(20, 20, 20, 20));
+
+        dialog.getDialogPane().setContent(borderPane);
+
+        // Convert the result to a username-password-pair when the login button is clicked.
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == loginButtonType) {
+                return tArea.getText();
+            }
+            return null;
+        });
+
+        Optional<String> result = dialog.showAndWait();
+
+        if (result.isPresent()) {
+            System.out.println("Good");
+        }
+    }
+
+    public void memoryChangeClicked(ActionEvent actionEvent) {
+
     }
 }

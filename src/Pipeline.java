@@ -71,6 +71,7 @@ public class Pipeline {
         }
 
         loadStoreQueue = new ArrayDeque<>();
+        decodedList = new ArrayList<>();
     }
 
     public int parser() {

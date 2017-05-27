@@ -29,6 +29,12 @@
                   </MenuItem>
             </items>
           </Menu>
+            <Menu fx:id="changeMenu" text="更改(_C)">
+              <items>
+                  <MenuItem mnemonicParsing="false" onAction="#registerChangeClicked" text="寄存器" />
+                <MenuItem mnemonicParsing="false" onAction="#memoryChangeClicked" text="内存" />
+              </items>
+            </Menu>
           <Menu text="帮助(_H)">
             <items>
               <MenuItem mnemonicParsing="false" onAction="#aboutClicked" text="关于" />
@@ -126,23 +132,23 @@
                   <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
                </VBox.margin>
             </Label>
-            <TableView fx:id="codeTableView" prefHeight="400.0" prefWidth="200.0">
+            <TableView fx:id="codeTableView" prefHeight="350.0" prefWidth="200.0">
               <columns>
                   <TableColumn editable="false" prefWidth="75.0" sortable="false" text="指令编号">
                       <cellValueFactory><PropertyValueFactory property="id" /></cellValueFactory>
                   </TableColumn>
-                <TableColumn editable="false" prefWidth="135.0" sortable="false" text="指令内容">
+                <TableColumn editable="false" minWidth="80.0" prefWidth="135.0" sortable="false" text="指令内容">
                     <cellValueFactory><PropertyValueFactory property="content" /></cellValueFactory>
                 </TableColumn>
                 <TableColumn editable="false" minWidth="0.0" prefWidth="98.0" sortable="false" text="运行状态">
                      <columns>
-                        <TableColumn editable="false" prefWidth="75.0" sortable="false" text="发射指令">
+                        <TableColumn editable="false" prefWidth="40.0" sortable="false" text="发射指令">
                             <cellValueFactory><PropertyValueFactory property="st1" /></cellValueFactory>
                         </TableColumn>
-                        <TableColumn editable="false" prefWidth="123.0" sortable="false" text="执行完毕">
+                        <TableColumn editable="false" prefWidth="40.0" sortable="false" text="执行完毕">
                             <cellValueFactory><PropertyValueFactory property="st2" /></cellValueFactory>
                         </TableColumn>
-                        <TableColumn editable="false" prefWidth="93.0" sortable="false" text="写回结果">
+                        <TableColumn editable="false" prefWidth="40.0" sortable="false" text="写回结果">
                             <cellValueFactory><PropertyValueFactory property="st3" /></cellValueFactory>
                         </TableColumn>
                      </columns>
@@ -162,7 +168,7 @@
                <VBox.margin>
                   <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
                </VBox.margin></Label>
-            <TableView fx:id="rsTableView" prefHeight="200.0" prefWidth="200.0">
+            <TableView fx:id="rsTableView" prefHeight="300.0" prefWidth="200.0">
                <columns>
                   <TableColumn editable="false" prefWidth="75.0" sortable="false" text="名称">
                       <cellValueFactory><PropertyValueFactory property="name" /></cellValueFactory>
@@ -290,7 +296,7 @@
                   <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
                </VBox.margin>
             </Label>
-            <TableView prefHeight="200.0" prefWidth="200.0">
+            <TableView fx:id="memTableView" prefHeight="200.0" prefWidth="200.0">
                <columns>
                   <TableColumn prefWidth="75.0" text="偏移" />
                   <TableColumn prefWidth="75.0" text="值" />
