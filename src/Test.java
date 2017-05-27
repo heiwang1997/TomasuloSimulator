@@ -10,7 +10,7 @@ public class Test {
         test.addCmd("LD F2,120(R4)");
         test.addCmd("LD F2,120(R4)");
         test.addCmd("LD F2,120(R4)");
-        test.addCmd("");
+        //test.addCmd("");
         test.parser();
         test.run();
         System.out.print(test.nextStep(10));

@@ -179,6 +179,7 @@ public class Pipeline {
             count++;
         }
         hasParsed = true;
+        //System.out.println(loadStoreQueue.size()) ;
         return 0;
     }
 
@@ -363,14 +364,18 @@ public class Pipeline {
             }
         }
         if (runningRS[2] == -1 && runningRS[3] == -1) {
-            Integer num = loadStoreQueue.getFirst();
-            if (num != null) {
-                int bufferNum = num>2? 2:3;
-                int rsIndex = num>2?num:num-3;
-                if (buffers[bufferNum][rsIndex].rsIndex[0][0] == -1) {
-                    runningRS[bufferNum] = rsIndex;
-                    restTime[bufferNum] = 2;
-                    loadStoreQueue.remove();
+            if(loadStoreQueue.size() > 0) {
+                Integer num = loadStoreQueue.getFirst();
+                if (num != null) {
+                    //System.out.println((num>2)) ;
+                    int bufferNum = num>2? 3:2;
+                    int rsIndex = num>2?num-3:num;
+                    //System.out.printf("bufferNum is %d; rsIndex is %d\n", bufferNum, rsIndex) ;
+                    if (buffers[bufferNum][rsIndex].rsIndex[0][0] == -1) {
+                        runningRS[bufferNum] = rsIndex;
+                        restTime[bufferNum] = 2;
+                        loadStoreQueue.remove();
+                    }
                 }
             }
         }
