@@ -126,7 +126,7 @@
                   <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
                </VBox.margin>
             </Label>
-            <TableView fx:id="codeTableView" prefHeight="200.0" prefWidth="200.0">
+            <TableView fx:id="codeTableView" prefHeight="400.0" prefWidth="200.0">
               <columns>
                   <TableColumn editable="false" prefWidth="75.0" sortable="false" text="指令编号">
                       <cellValueFactory><PropertyValueFactory property="id" /></cellValueFactory>
@@ -193,7 +193,7 @@
                   <Insets left="40.0" right="40.0" />
                </VBox.margin>
             </TableView>
-            <Label text="浮点寄存器">
+            <Label text="Load-Store队列">
                <font>
                   <Font size="20.0" />
                </font>
@@ -210,63 +210,78 @@
                   <Insets left="40.0" right="40.0" />
                </VBox.margin>
             </TableView>
-            <Label text="整数寄存器">
-               <font>
-                  <Font size="20.0" />
-               </font>
-               <VBox.margin>
-                  <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
-               </VBox.margin>
-            </Label>
-            <TableView prefHeight="200.0" prefWidth="200.0">
-              <columns>
-                <TableColumn prefWidth="75.0" text="C1" />
-                <TableColumn prefWidth="75.0" text="C2" />
-              </columns>
-               <VBox.margin>
-                  <Insets left="40.0" right="40.0" />
-               </VBox.margin>
-            </TableView>
          </children>
       </VBox>
    </center>
    <right>
-      <VBox alignment="TOP_CENTER" prefWidth="300.0" BorderPane.alignment="CENTER">
+      <VBox alignment="TOP_CENTER" prefWidth="500.0" BorderPane.alignment="CENTER">
          <children>
-            <Label text="LOAD队列">
-               <font>
-                  <Font size="20.0" />
-               </font>
-               <VBox.margin>
-                  <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
-               </VBox.margin>
-            </Label>
-            <TableView prefHeight="200.0" prefWidth="200.0">
-              <columns>
-                <TableColumn editable="false" prefWidth="75.0" sortable="false" text="名称" />
-                <TableColumn editable="false" prefWidth="75.0" sortable="false" text="Busy" />
-              </columns>
+            <HBox alignment="TOP_CENTER">
                <VBox.margin>
                   <Insets />
                </VBox.margin>
-            </TableView>
-            <Label text="STORE队列">
-               <font>
-                  <Font size="20.0" />
-               </font>
-               <VBox.margin>
-                  <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
-               </VBox.margin>
-            </Label>
-            <TableView prefHeight="200.0" prefWidth="200.0">
-              <columns>
-                <TableColumn prefWidth="75.0" text="C1" />
-                <TableColumn prefWidth="75.0" text="C2" />
-              </columns>
-               <VBox.margin>
-                  <Insets />
-               </VBox.margin>
-            </TableView>
+               <children>
+                  <VBox alignment="TOP_CENTER">
+                     <children>
+                        <Label text="浮点寄存器">
+                           <font>
+                              <Font size="20.0" />
+                           </font>
+                           <VBox.margin>
+                              <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+                           </VBox.margin>
+                        </Label>
+                        <TableView fx:id="fpRegTableView" prefHeight="600.0" prefWidth="200.0">
+                          <columns>
+                            <TableColumn editable="false" prefWidth="75.0" sortable="false" text="名称">
+                                <cellValueFactory><PropertyValueFactory property="name" /></cellValueFactory>
+                            </TableColumn>
+                            <TableColumn editable="false" prefWidth="75.0" sortable="false" text="值">
+                                <cellValueFactory><PropertyValueFactory property="value" /></cellValueFactory>
+                            </TableColumn>
+                              <TableColumn editable="false" prefWidth="75.0" sortable="false" text="Qi">
+                                  <cellValueFactory><PropertyValueFactory property="rs" /></cellValueFactory>
+                              </TableColumn>
+                          </columns>
+                           <columnResizePolicy>
+                              <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
+                           </columnResizePolicy>
+                        </TableView>
+                     </children>
+                     <padding>
+                        <Insets right="20.0" />
+                     </padding>
+                  </VBox>
+                  <VBox alignment="TOP_CENTER">
+                     <children>
+                        <Label text="整数寄存器">
+                           <font>
+                              <Font size="20.0" />
+                           </font>
+                           <VBox.margin>
+                              <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+                           </VBox.margin>
+                        </Label>
+                        <TableView fx:id="cpuRegTableView" prefHeight="600.0" prefWidth="200.0">
+                          <columns>
+                            <TableColumn editable="false" prefWidth="75.0" sortable="false" text="名称">
+                                <cellValueFactory><PropertyValueFactory property="name" /></cellValueFactory>
+                            </TableColumn>
+                            <TableColumn editable="false" prefWidth="75.0" sortable="false" text="值">
+                                <cellValueFactory><PropertyValueFactory property="value" /></cellValueFactory>
+                            </TableColumn>
+                          </columns>
+                           <columnResizePolicy>
+                              <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
+                           </columnResizePolicy>
+                        </TableView>
+                     </children>
+                     <padding>
+                        <Insets left="20.0" />
+                     </padding>
+                  </VBox>
+               </children>
+            </HBox>
             <Label text="内存">
                <font>
                   <Font size="20.0" />

@@ -13,7 +13,9 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
 import javafx.util.Pair;
+import tableElements.CPURegRow;
 import tableElements.CodeRow;
+import tableElements.FPRegRow;
 import tableElements.RSRow;
 
 import java.io.BufferedReader;
@@ -28,11 +30,15 @@ import java.util.ResourceBundle;
 public class MainSceneController implements Initializable {
 
     private final int SAMPLE_COUNT = 2;
+    private final String[] RS_NAME = {"ADD", "MULT", "LOAD", "STORE"};
+    private final String[] OP_NAME = {"ADD", "SUB", "MUL", "DIV"};
 
     public Label clockLabel;
     public Label clockTimeLabel;
     public TableView<RSRow> rsTableView;
     public TableView<CodeRow> codeTableView;
+    public TableView<FPRegRow> fpRegTableView;
+    public TableView<CPURegRow> cpuRegTableView;
 
     @FXML
     private Button inputButton;
@@ -159,6 +165,7 @@ public class MainSceneController implements Initializable {
         pipeline = new Pipeline();
 
         refreshReservationStation();
+        refreshRegisters();
 
         for (int i = 0; i < SAMPLE_COUNT; ++ i) {
             MenuItem sampleItem = new MenuItem("示例" + String.valueOf(i + 1));
@@ -212,15 +219,22 @@ public class MainSceneController implements Initializable {
     }
 
     private void refreshReservationStation() {
-        ObservableList<RSRow> a = FXCollections.observableArrayList(
-                new RSRow("1"), new RSRow("2")
-        );
+        ObservableList<RSRow> a = FXCollections.observableArrayList();
+        for (int i = 0; i < 2; ++ i) {
+            for (int j = 0; j < 3; ++ j) {
+                String rsName = RS_NAME[i] + String.valueOf(j + 1);
+                RSRow rRow = new RSRow(rsName);
+                rRow.setBusy(pipeline.buffers[i][j].busy ? "Yes" : "No");
+                int op = pipeline.buffers[i][j].operator;
+                rRow.setOp(OP_NAME[i * 2 + op]);
+                a.add(rRow);
+            }
+        }
         rsTableView.getItems().setAll(a);
     }
 
     private void refreshCodeSection() {
         ObservableList<CodeRow> a = FXCollections.observableArrayList();
-        int pc = 1;
         for (Cmd cmd : pipeline.decodedList) {
             CodeRow cRow = new CodeRow(a.size() + 1, cmd.text);
             if (cmd.state >= 1) cRow.setSt1("OK");
@@ -232,7 +246,23 @@ public class MainSceneController implements Initializable {
     }
 
     private void refreshRegisters() {
-
+        ObservableList<CPURegRow> a = FXCollections.observableArrayList();
+        for (int i = 0; i < 8; ++ i) {
+            CPURegRow cRow = new CPURegRow("R" + String.valueOf(i + 1));
+            cRow.setValue(String.valueOf(pipeline.cpuRegisters[i]));
+            a.add(cRow);
+        }
+        cpuRegTableView.getItems().setAll(a);
+        ObservableList<FPRegRow> b = FXCollections.observableArrayList();
+        for (int i = 0; i < 30; ++ i) {
+            FPRegRow fRow = new FPRegRow("F" + String.valueOf(i + 1));
+            fRow.setValue(String.valueOf(pipeline.fpRegisters[i]));
+            String rsName = RS_NAME[pipeline.fpRegistersStatus[i][0]] +
+                    String.valueOf(pipeline.fpRegistersStatus[i][1] + 1);
+            fRow.setRs(rsName);
+            b.add(fRow);
+        }
+        fpRegTableView.getItems().setAll(b);
     }
 
     private void showAlert(Alert.AlertType type, String title, String header, String content) {
