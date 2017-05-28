@@ -426,6 +426,7 @@ public class Pipeline {
                     }
                     case 2: {
                         result = memory[buffers[i][runningRS[i]].address];
+                        fpRegisters[decodedList.get(buffers[i][runningRS[i]].pc - 1).code[1]] = result;
                         loadStoreQueue.remove();
                         break;
                     }
