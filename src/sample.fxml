@@ -46,7 +46,7 @@
    <bottom>
       <HBox prefHeight="33.0" prefWidth="1098.0" BorderPane.alignment="CENTER">
          <children>
-            <Label contentDisplay="TOP" nodeOrientation="LEFT_TO_RIGHT" prefHeight="39.0" prefWidth="1099.0" text="欢迎使用！">
+            <Label fx:id="hintTextLabel" contentDisplay="TOP" nodeOrientation="LEFT_TO_RIGHT" prefHeight="39.0" prefWidth="1099.0" text="欢迎使用！">
                <font>
                   <Font size="16.0" />
                </font>
@@ -110,7 +110,7 @@
                      <Insets bottom="10.0" left="6.0" right="6.0" top="10.0" />
                  </padding>
              </MenuButton>
-            <Button fx:id="tailButton" contentDisplay="TOP" graphicTextGap="10.0" mnemonicParsing="false" onAction="#tailClicked" text="执行到底">
+            <Button fx:id="tailButton" contentDisplay="TOP" graphicTextGap="10.0" mnemonicParsing="false" onAction="#tailClicked" text="自动执行">
                <VBox.margin>
                   <Insets bottom="15.0" left="15.0" right="15.0" top="15.0" />
                </VBox.margin>

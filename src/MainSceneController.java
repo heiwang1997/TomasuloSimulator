@@ -41,6 +41,7 @@ public class MainSceneController implements Initializable {
     public TableView<MemRow> memTableView;
     public Menu changeMenu;
     public TableView<LsQueueRow> lsQueueTableView;
+    public Label hintTextLabel;
 
     private int currentTime;
     private boolean timerRunning;
@@ -137,10 +138,11 @@ public class MainSceneController implements Initializable {
     @FXML
     void startClicked(ActionEvent event) {
         if (pipeline.isRunning) {
-            // TODO: Fix this.
+            pipeline.clean();
             pipeline.isRunning = false;
             currentTime = 0;
             switchStatus(false);
+            refreshAll();
         } else {
             if (pipeline.decodedList.size() == 0) {
                 showAlert(Alert.AlertType.ERROR, "错误", "操作错误",
@@ -150,29 +152,45 @@ public class MainSceneController implements Initializable {
             currentTime = 0;
             pipeline.run();
             switchStatus(true);
-            // TODO: Okay to run this?
             refreshAll();
         }
     }
 
     private void continueClicked(int step) {
-        pipeline.nextStep(step);
-        currentTime += step;
+        if (allFinished()) return;
+        for (int i = 0; i < step; ++ i) {
+            pipeline.nextStep();
+            currentTime += 1;
+            if (allFinished()) {
+                stepButton.setDisable(true);
+                continueButton.setDisable(true);
+                tailButton.setDisable(true);
+                hintTextLabel.setText("指令全部执行完毕");
+                break;
+            }
+        }
         refreshAll();
     }
 
     @FXML
     void stepClicked(ActionEvent event) {
+        if (allFinished()) return;
         pipeline.nextStep();
         currentTime += 1;
         refreshAll();
+        if (allFinished()) {
+            stepButton.setDisable(true);
+            continueButton.setDisable(true);
+            tailButton.setDisable(true);
+            hintTextLabel.setText("指令全部执行完毕");
+        }
     }
 
     @FXML
     void tailClicked(ActionEvent event) {
         if (timerRunning) {
             tailButton.setGraphic(new ImageView("/resources/tail.png"));
-            tailButton.setText("执行到底");
+            tailButton.setText("自动执行");
             stepButton.setDisable(false);
             continueButton.setDisable(false);
             timerRunning = false;
@@ -272,7 +290,8 @@ public class MainSceneController implements Initializable {
             fpRegTableView.setEditable(true);
             changeMenu.setDisable(false);
             tailButton.setGraphic(new ImageView("/resources/tail.png"));
-            tailButton.setText("执行到底");
+            tailButton.setText("自动执行");
+            hintTextLabel.setText("欢迎使用");
             timerRunning = false;
         }
     }
@@ -534,5 +553,12 @@ public class MainSceneController implements Initializable {
             }
             refreshMemory();
         }
+    }
+
+    private boolean allFinished() {
+        for (Cmd cmd : pipeline.decodedList) {
+            if (cmd.state != 3) return false;
+        }
+        return true;
     }
 }

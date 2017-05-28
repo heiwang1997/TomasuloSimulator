@@ -198,8 +198,8 @@ public class Pipeline {
         isRunning = true;
         pc = 0;
 
-        if (runTimes > 0)
-            clean();
+//        if (runTimes > 0)
+//            clean();
         runTimes++;
         return 0;
     }
@@ -210,6 +210,12 @@ public class Pipeline {
             fpRegistersStatus[i][0] = -1;
             fpRegistersStatus[i][1] = -1;
             fpRegisters[i] = 0;
+        }
+        for (int i = 0; i < 8; i++) {
+            cpuRegisters[i] = 0;
+        }
+        for (int i = 0; i < 4096; ++ i) {
+            memory[i] = 0;
         }
 
         pc = 0;
@@ -227,7 +233,6 @@ public class Pipeline {
         }
 
         loadStoreQueue = new ArrayDeque<>();
-
         for (Cmd aDecodedList : decodedList) aDecodedList.state = 0;
     }
 
