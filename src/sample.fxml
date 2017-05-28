@@ -102,14 +102,14 @@
                   <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
                </padding>
             </Button>
-            <Button fx:id="continueButton" contentDisplay="TOP" graphicTextGap="10.0" mnemonicParsing="false" onAction="#continueClicked" text="连续执行">
-               <VBox.margin>
-                  <Insets bottom="15.0" left="15.0" right="15.0" top="15.0" />
-               </VBox.margin>
-               <padding>
-                  <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
-               </padding>
-            </Button>
+             <MenuButton fx:id="continueButton" contentDisplay="TOP" graphicTextGap="10.0" mnemonicParsing="false" popupSide="RIGHT" text="连续" textOverrun="CLIP">
+                 <VBox.margin>
+                     <Insets bottom="15.0" left="15.0" right="15.0" top="15.0" />
+                 </VBox.margin>
+                 <padding>
+                     <Insets bottom="10.0" left="6.0" right="6.0" top="10.0" />
+                 </padding>
+             </MenuButton>
             <Button fx:id="tailButton" contentDisplay="TOP" graphicTextGap="10.0" mnemonicParsing="false" onAction="#tailClicked" text="执行到底">
                <VBox.margin>
                   <Insets bottom="15.0" left="15.0" right="15.0" top="15.0" />
@@ -132,7 +132,7 @@
                   <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
                </VBox.margin>
             </Label>
-            <TableView fx:id="codeTableView" prefHeight="350.0" prefWidth="200.0">
+            <TableView fx:id="codeTableView" prefHeight="300.0" prefWidth="200.0">
               <columns>
                   <TableColumn editable="false" prefWidth="75.0" sortable="false" text="指令编号">
                       <cellValueFactory><PropertyValueFactory property="id" /></cellValueFactory>
@@ -161,14 +161,14 @@
                   <Insets left="40.0" right="40.0" />
                </VBox.margin>
             </TableView>
-            <Label text="保留站">
+            <Label text="运算部件保留站">
                <font>
                   <Font size="20.0" />
                </font>
                <VBox.margin>
                   <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
                </VBox.margin></Label>
-            <TableView fx:id="rsTableView" prefHeight="300.0" prefWidth="200.0">
+            <TableView fx:id="rsTableView" prefHeight="250.0" prefWidth="200.0">
                <columns>
                   <TableColumn editable="false" prefWidth="75.0" sortable="false" text="名称">
                       <cellValueFactory><PropertyValueFactory property="name" /></cellValueFactory>
@@ -207,14 +207,33 @@
                   <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
                </VBox.margin>
             </Label>
-            <TableView prefHeight="200.0" prefWidth="200.0">
+            <TableView fx:id="lsQueueTableView" prefHeight="200.0" prefWidth="200.0">
               <columns>
-                <TableColumn prefWidth="147.0" text="C1" />
-                <TableColumn minWidth="0.0" prefWidth="132.0" text="C2" />
+                <TableColumn editable="false" prefWidth="147.0" sortable="false" text="队列排序">
+                    <cellValueFactory><PropertyValueFactory property="id" /></cellValueFactory>
+                </TableColumn>
+                <TableColumn editable="false" minWidth="0.0" prefWidth="132.0" sortable="false" text="保留站名称">
+                    <cellValueFactory><PropertyValueFactory property="rsName" /></cellValueFactory>
+                </TableColumn>
+                  <TableColumn editable="false" prefWidth="75.0" sortable="false" text="Op">
+                      <cellValueFactory><PropertyValueFactory property="op" /></cellValueFactory>
+                  </TableColumn>
+                  <TableColumn editable="false" prefWidth="75.0" sortable="false" text="Vj">
+                      <cellValueFactory><PropertyValueFactory property="vj" /></cellValueFactory>
+                  </TableColumn>
+                  <TableColumn editable="false" prefWidth="75.0" sortable="false" text="Qj">
+                      <cellValueFactory><PropertyValueFactory property="qj" /></cellValueFactory>
+                  </TableColumn>
+                  <TableColumn editable="false" prefWidth="75.0" sortable="false" text="地址偏移">
+                      <cellValueFactory><PropertyValueFactory property="address" /></cellValueFactory>
+                  </TableColumn>
               </columns>
                <VBox.margin>
                   <Insets left="40.0" right="40.0" />
                </VBox.margin>
+               <columnResizePolicy>
+                  <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
+               </columnResizePolicy>
             </TableView>
          </children>
       </VBox>
@@ -237,7 +256,7 @@
                               <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
                            </VBox.margin>
                         </Label>
-                        <TableView fx:id="fpRegTableView" prefHeight="600.0" prefWidth="200.0">
+                        <TableView fx:id="fpRegTableView" prefHeight="500.0" prefWidth="200.0">
                           <columns>
                             <TableColumn editable="false" prefWidth="75.0" sortable="false" text="名称">
                                 <cellValueFactory><PropertyValueFactory property="name" /></cellValueFactory>
@@ -268,7 +287,7 @@
                               <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
                            </VBox.margin>
                         </Label>
-                        <TableView fx:id="cpuRegTableView" prefHeight="600.0" prefWidth="200.0">
+                        <TableView fx:id="cpuRegTableView" prefHeight="500.0" prefWidth="200.0">
                           <columns>
                             <TableColumn editable="false" prefWidth="75.0" sortable="false" text="名称">
                                 <cellValueFactory><PropertyValueFactory property="name" /></cellValueFactory>
@@ -296,16 +315,20 @@
                   <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
                </VBox.margin>
             </Label>
-            <TableView fx:id="memTableView" prefHeight="200.0" prefWidth="200.0">
+            <TableView fx:id="memTableView" prefHeight="250.0" prefWidth="200.0">
                <columns>
-                  <TableColumn prefWidth="75.0" text="偏移" />
-                  <TableColumn prefWidth="75.0" text="值" />
+                  <TableColumn prefWidth="75.0" text="偏移">
+                      <cellValueFactory><PropertyValueFactory property="offset" /></cellValueFactory>
+                  </TableColumn>
+                  <TableColumn prefWidth="75.0" text="值">
+                      <cellValueFactory><PropertyValueFactory property="value" /></cellValueFactory>
+                  </TableColumn>
                </columns>
                <columnResizePolicy>
                   <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
                </columnResizePolicy>
                <VBox.margin>
-                  <Insets />
+                  <Insets left="30.0" right="30.0" />
                </VBox.margin>
             </TableView>
          </children>
