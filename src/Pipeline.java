@@ -89,6 +89,7 @@ public class Pipeline {
             switch (opList[0]) {
                 case "ADDD": {
                     operator = ADD;
+                    break;
                 }
                 case "SUBD": {
                     operator = SUB;
@@ -197,35 +198,37 @@ public class Pipeline {
         isRunning = true;
         pc = 0;
 
-        if (runTimes > 0) {
-            cpuRegisters = new int[8];
-            fpRegisters = new float[32];
-            fpRegistersStatus = new int[32][2];
-            for (int i = 0; i < 32; i++) {
-                fpRegistersStatus[i][0] = -1;
-                fpRegisters[i] = 0;
-            }
-
-            pc = 0;
-
-            buffers = new TMLBuffer[4][3];
-            for (int i = 0; i < 4; i++)
-                for (int j = 0; j < 3; j++)
-                    buffers[i][j] = new TMLBuffer();
-
-            memory = new float[4096];
-
-            runningRS = new int[4];
-            restTime = new int[4];
-            for (int i = 0; i < 4; i++) {
-                runningRS[i] = -1;
-                restTime[i] = -1;
-            }
-
-            loadStoreQueue = new ArrayDeque<>();
-        }
+        if (runTimes > 0)
+            clean();
         runTimes++;
         return 0;
+    }
+
+    public void clean() {
+        fpRegistersStatus = new int[32][2];
+        for (int i = 0; i < 32; i++) {
+            fpRegistersStatus[i][0] = -1;
+            fpRegistersStatus[i][1] = -1;
+            fpRegisters[i] = 0;
+        }
+
+        pc = 0;
+
+        buffers = new TMLBuffer[4][3];
+        for (int i = 0; i < 4; i++)
+            for (int j = 0; j < 3; j++)
+                buffers[i][j] = new TMLBuffer();
+
+        runningRS = new int[4];
+        restTime = new int[4];
+        for (int i = 0; i < 4; i++) {
+            runningRS[i] = -1;
+            restTime[i] = -1;
+        }
+
+        loadStoreQueue = new ArrayDeque<>();
+
+        for (Cmd aDecodedList : decodedList) aDecodedList.state = 0;
     }
 
     public int nextStep() {
@@ -379,7 +382,7 @@ public class Pipeline {
                     if (buffers[bufferNum][rsIndex].rsIndex[0][0] == -1) {
                         runningRS[bufferNum] = rsIndex;
                         restTime[bufferNum] = 2;
-                        loadStoreQueue.remove();
+//                        loadStoreQueue.remove();
                     }
                 }
             }
@@ -418,6 +421,7 @@ public class Pipeline {
                     }
                     case 2: {
                         result = memory[buffers[i][runningRS[i]].address];
+                        loadStoreQueue.remove();
                         break;
                     }
                     case 3: {
@@ -431,6 +435,7 @@ public class Pipeline {
                             fpRegistersStatus[j][0] = fpRegistersStatus[j][1] = -1;
                             break;
                         }
+                    loadStoreQueue.remove();
                     decodedList.get(buffers[i][runningRS[i]].pc-1).state = 3;
                     buffers[i][runningRS[i]] = new TMLBuffer();
                     runningRS[i] = -1;
