@@ -195,6 +195,7 @@ public class Pipeline {
             return -1;
         if (cmdList.size() == 0)
             return -1;
+        meminit();
         isRunning = true;
         pc = 0;
 
@@ -202,6 +203,18 @@ public class Pipeline {
 //            clean();
         runTimes++;
         return 0;
+    }
+
+    public void meminit(){
+        for(int i = 0 ; i < 32 ; i ++){
+            fpRegisters[i] = i ;
+        }
+        for(int i = 0 ; i < 8 ; i ++){
+            cpuRegisters[i] = 2*i ;
+        }
+        for (int i = 0 ; i < 4096 ; i ++){
+            memory[i] = i ;
+        }
     }
 
     public void clean() {

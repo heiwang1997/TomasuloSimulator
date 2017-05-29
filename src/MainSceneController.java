@@ -27,7 +27,7 @@ import java.util.ResourceBundle;
 
 public class MainSceneController implements Initializable {
 
-    private final int SAMPLE_COUNT = 2;
+    private final int SAMPLE_COUNT = 5;
     private final String[] RS_NAME = {"ADD", "MULT", "LOAD", "STORE"};
     private final String[] OP_NAME = {"ADD", "SUB", "MUL", "DIV", "LD", "ST"};
     private final int[] CONTINUE_STEPS = {5, 10, 15, 20};
