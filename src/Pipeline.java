@@ -254,9 +254,9 @@ public class Pipeline {
             return -1;
         if (cmdList.size() == 0)
             return -1;
+        if (writeResult() != 0) return -1;
         whichRSRun();
         if (exe() != 0) return -1;
-        if (writeResult() != 0) return -1;
         if (issue() != 0) return -1;
         return 0;
     }
@@ -267,9 +267,9 @@ public class Pipeline {
         if (cmdList.size() == 0)
             return -1;
         for (int i = 0; i < step; i++) {
+            if (writeResult() != 0) return -1;
             whichRSRun();
             if (exe() != 0) return -1;
-            if (writeResult() != 0) return -1;
             if (issue() != 0) return -1;
         }
         return 0;
@@ -412,7 +412,7 @@ public class Pipeline {
         for (int i = 0; i < 4; i++) {
             if (runningRS[i] != -1 && restTime[i] >= 0)
                 restTime[i]--;
-            if (restTime[i] == 0)
+            if (runningRS[i] != -1 && restTime[i] == 0)
                 decodedList.get(buffers[i][runningRS[i]].pc-1).state = 2;
         }
         return 0;
@@ -420,7 +420,7 @@ public class Pipeline {
 
     private int writeResult() {
         for (int i = 0; i < 4; i++) {
-            if (runningRS[i] != -1 && restTime[i] == -1) {
+            if (runningRS[i] != -1 && restTime[i] == 0) {
                 float result = 0;
                 switch (i) {
                     case 0: {
