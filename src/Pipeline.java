@@ -304,7 +304,9 @@ public class Pipeline {
             }
             if (bufferNum <= 1) {
                 boolean flag = false;
-                for (int i = 0; i < 3; i++)
+                for (int i = 0; i < 3; i++) {
+                    if (bufferNum == 1 && i == 2)
+                        break;
                     if (!buffers[bufferNum][i].busy) {
                         buffers[bufferNum][i].busy = true;
                         buffers[bufferNum][i].pc = pc;
@@ -329,6 +331,7 @@ public class Pipeline {
                         cmd.state = 1;
                         break;
                     }
+                }
                 if (!flag)
                     pc--;
             } else {
@@ -370,6 +373,8 @@ public class Pipeline {
         for (int i = 0; i < 2; i++) {
             if (runningRS[i] == -1) {
                 for (int j = 0; j < 3; j++) {
+                    if (i == 1 && j == 2)
+                        break;
                     if (buffers[i][j].busy)
                         if (buffers[i][j].rsIndex[0][0] == -1 && buffers[i][j].rsIndex[1][0] == -1) {
                             runningRS[i] = j;
@@ -428,6 +433,7 @@ public class Pipeline {
                         if (buffers[i][runningRS[i]].operator == 0)
                             result += buffers[i][runningRS[i]].value[1];
                         else result -= buffers[i][runningRS[i]].value[1];
+                        fpRegisters[decodedList.get(buffers[i][runningRS[i]].pc - 1).code[1]] = result;
                         break;
                     }
                     case 1: {
@@ -435,6 +441,7 @@ public class Pipeline {
                         if (buffers[i][runningRS[i]].operator == 0)
                             result *= buffers[i][runningRS[i]].value[1];
                         else result /= buffers[i][runningRS[i]].value[1];
+                        fpRegisters[decodedList.get(buffers[i][runningRS[i]].pc - 1).code[1]] = result;
                         break;
                     }
                     case 2: {
