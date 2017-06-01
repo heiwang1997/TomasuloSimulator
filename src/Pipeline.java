@@ -76,6 +76,8 @@ public class Pipeline {
 
     public int parser() {
         decodedList = new ArrayList<>();
+        parseErrMessage = "未知错误，请参阅设计文档进行语法检查！" +
+                "（各个寄存器名的逗号后不应该有空格）";
         int count = 1;
         for (String cmd : cmdList) {
             String[] opList = cmd.split(" |,");
@@ -112,7 +114,7 @@ public class Pipeline {
                     break;
                 }
                 default:
-                    parseErrMessage = String.format("第%d条代码格式有误,操作数不存在", count);
+                    parseErrMessage = String.format("第%d条代码格式有误,操作码不存在", count);
                     return -1;
             }
             tempCmd.code[0] = operator;

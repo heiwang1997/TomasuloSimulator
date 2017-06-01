@@ -22,6 +22,7 @@ import javax.swing.text.Style;
 import java.io.*;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.ResourceBundle;
 
@@ -309,6 +310,7 @@ public class MainSceneController implements Initializable {
         ObservableList<RSRow> a = FXCollections.observableArrayList();
         for (int i = 0; i < 2; ++ i) {
             for (int j = 0; j < 3; ++ j) {
+                if (i == 1 && j == 2) continue;
                 String rsName = RS_NAME[i] + String.valueOf(j + 1);
                 RSRow rRow = new RSRow(rsName);
                 TMLBuffer thisBuffer = pipeline.buffers[i][j];
